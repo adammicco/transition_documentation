@@ -39,3 +39,27 @@ siblings | IndA, IndB, IndC
 This script does not currently have any support for assisting with pedigree construction. However, if this is of interest, the edge and node attribues could be very useful for storing the data required to fully define pedigree relatiponships. This could also be made more robust by integration with a graph database exttension in adna2.
 
 Graphing functionality is curently very rudimentary and produces ugly results. This is something that could be improved upon and potentailly even expanded to assist with pedigree construction and/or programatic figure creation.
+
+## PCA_clustering.R
+This is a basic starting point for a project I started working on a long time ago to try to add rigor to the PCA-based pre-release curation/QA process.
+
+Assuming that the process has not changed, we are currently relying on manual checks to determine if individuals cluster as expected in PCA space, both with respect to other individuals in their same population/group ID and to the background data. This is useful for QA, outlier detection, and subdivision of group IDs were applicable.
+
+This script attempts to assist in detecting outliers and instances where subpopulations may be defined. It does not address comparison with the background PCA data.
+
+### Implementation
+To address the first problem of defining subpopulations within a specific group ID, I first attempt to calculate the ideal number of clusters that best fit the data in `calc_gap_stat_opt_clust` by using a gap statistic. My naïve approach here does not tune itself to better suit different populations that map more/less densely into PCA space.
+
+Once the ideal number of clusters is determined, we then run k-means to assign individuals to a cluster in `run_kmeans`.
+
+From there, `detect_outliers` handles calcuating euclidean distance between cluster centers and each individual and assigning a boolean outlier designation to each at various z-score thresholds (2, 1, 0.75, 0.5). These are then returned in a dataframe which then used for plotting clusters and outliers.
+
+### Shortcomings and Future Improvements
+
+I never got particularly far in this project but I think that it could still be a valuable improvement for the QA/curation process.
+
+The most basic improvements could center around tuning the gap stat logic or implementing other methods (elbow method? hierarchical clustering?) for determining the ideal number of clusters to map individuals to.
+
+Outlier detection is also done pretty naïvely here. During manual curation, it is normal to adjust outlier tolerace based on the expected spread of individuals within PCA space as some populations tend to map more densely and others less so. This script simply relies on analyzing individuals' PC_1 and PC_2 coordinates once the PCA mapping has already been performed externally and does not consider the PCA background data. This poses a problem in outlier detection across different levels of expected spread. I've thought about this a bit but have not had a chance to implement anything to attempt to solve it. I do not fully understand the complexities here, but I would expect that the differing spread across populations could possibly be accounted for by running clustering more PCs in higher dimentional space in order to normalize for spread across different populations/clusters when doing outlier detection.
+
+Both for improved clustering/normalization and to streamline the pipeline, it could also be beneficial to integrate this with the PCA transform and plotting logic.
