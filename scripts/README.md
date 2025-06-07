@@ -63,3 +63,7 @@ The most basic improvements could center around tuning the gap stat logic or imp
 Outlier detection is also done pretty naïvely here. During manual curation, it is normal to adjust outlier tolerace based on the expected spread of individuals within PCA space as some populations tend to map more densely and others less so. This script simply relies on analyzing individuals' PC_1 and PC_2 coordinates once the PCA mapping has already been performed externally and does not consider the PCA background data. This poses a problem in outlier detection across different levels of expected spread. I've thought about this a bit but have not had a chance to implement anything to attempt to solve it. I do not fully understand the complexities here, but I would expect that the differing spread across populations could possibly be accounted for by running clustering more PCs in higher dimentional space in order to normalize for spread across different populations/clusters when doing outlier detection.
 
 Both for improved clustering/normalization and to streamline the pipeline, it could also be beneficial to integrate this with the PCA transform and plotting logic.
+
+## rev_complement.py
+This is a super simple script that simply takes in sequences and produces thier reverse complements. Self-explainatory and probably inferior to another tool. I don't remember why I wrote this!
+
