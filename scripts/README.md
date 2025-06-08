@@ -101,3 +101,9 @@ This script was meant to use [geopy](https://geopy.readthedocs.io/en/stable/) to
 This did not go very well in my testing as many of the locality names do not appear in Open Street Map data. This will likely continue to be a barrier as many locality strings reference archaeological site and/or histroical features. Additionally, many names are non-standard Romanizations/Anglicanizations of names in other languages and this makes querying against a datbase mostly focused on modern points of interest difficult.
 
 This may still be an idea worth pursuing in the future, but it will prove challenging.
+
+## scratch_prepare.sh
+This is a basic script that handles creating a folder on /n/sratch3 to be used for running the demultiplexing and analysis pipeline and copying over the fastq files given the flowcell and lane.
+
+This is not really relevant anymore given the sequencing platform and data delivery changes.
+
