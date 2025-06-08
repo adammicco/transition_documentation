@@ -90,3 +90,14 @@ Locality matching/validation could also be improved and even integrated with a m
 
 Additonal checks could be easily performed on filepaths pointing to bams, pulldowns/logs, etc. in the anno file/adna2 to flag issues with dead pointers.
 
+## lat_long_verify.py
+In much the same vein as the above script, this script is a very basic starting point to vaildate latitude and longitude based on locality data.
+
+### Implementation
+This script was meant to use [geopy](https://geopy.readthedocs.io/en/stable/) to handle hitting a geocoding API, [nominatim](https://nominatim.org/release-docs/develop/). This uses Open Street Map data to attempt to geocode based on a query made up of the tokenized locality string components and the country.
+
+### Shortcomings and Future Improvements
+
+This did not go very well in my testing as many of the locality names do not appear in Open Street Map data. This will likely continue to be a barrier as many locality strings reference archaeological site and/or histroical features. Additionally, many names are non-standard Romanizations/Anglicanizations of names in other languages and this makes querying against a datbase mostly focused on modern points of interest difficult.
+
+This may still be an idea worth pursuing in the future, but it will prove challenging.
