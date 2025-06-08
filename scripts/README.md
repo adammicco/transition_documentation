@@ -67,3 +67,26 @@ Both for improved clustering/normalization and to streamline the pipeline, it co
 ## rev_complement.py
 This is a super simple script that simply takes in sequences and produces thier reverse complements. Self-explainatory and probably inferior to another tool. I don't remember why I wrote this!
 
+## anno_gut_check.py
+This is part of an unfinished project to implement various quality checks that would run on the anno file before a release. With the anno file likely moving to being a view extracted from adna2, this is likely not something that we would want to continue developing as a stand alone utility. However, a lot of the logic here could be reused and run against adna2 with some modification.
+
+### Implementation
+`detect_cov_outliers` takes in SNP count and coverage data (column names will need to be adjusted) in order to detect samples for which these are not correlated as expected as this is a huge red flag of some sort of sample scramble or data processing issue. It ignores any samples where there is missing or invalid data for SNP count, builds a covariance matrix and checks if it is positive definite with `is_pos_def()`. From there, it calculates the Mahalanobis distance, which takes into account the covariance between these two variables, to measure how far each data point deviates from the expected relationship between SNP count and coverage. Outliers are flagged based on how many standard deviations they fall away from the mean, with thresholds being adjustable through the extreme parameter, althrough this may need adjustment as we have different capture methods and pulldown parameters now.
+
+`find_group_ID_typos()` is a work in progress for detecting typos in group IDs as these were (and likely still are) a huge pain point. It first toeknizes group IDs from the anno file, exluding patterns defined in `IGNORE_PATTERNS`. These are suffixes and infixes that I found to be common in the anno file (circa 2021ish) and should be excluded when comparing group IDs to eachother. It then looks for similarities in the tokenized group IDs to detect instances where components of group IDs may have been inadvertently swapped or misformatted and suggest correction to the version of each group ID that appears most frequently, based on the assumption that this is the one most likely to be correct.
+
+There are two helper function that drive this:
+
+1. `group_ID_set_match()` uses the Jaro-Winkler similarity between sets of tokens from two different group IDs to determine their similarity regardless of order. If this similarity is above `similarity_threshold`, the two tokenized group IDs are flagged as being possible matches, allowing for slight variations (swapped components) to be captured.
+
+2. `find_base_ids_with_common_elements()` uses `group_ID_set_match()` to compare ach tokenized group ID to the others in the dataset, returning the indices of those that are determined to be above the specified Jaro-Winkler `similarity_threshold`.
+
+### Shortcomings and Future Improvements
+This is an unfinished script and will not work out of the box, especially given changes in anno file formatting, and methodology impacting SNP counts and coverage depth. That said, this could be useful as a juming off point for implementing validation checks in adna2 -- though this might be better implemented via a tool like [Great Expectations](https://docs.greatexpectations.io/docs/0.18/oss/get_started/get_started_with_gx_and_sql/) or similar tools.
+
+In terms of methodology, the outliter detection could probably use some work and may even be able to be shifted to a simpler method.
+
+Locality matching/validation could also be improved and even integrated with a mapping API in the future (see below).
+
+Additonal checks could be easily performed on filepaths pointing to bams, pulldowns/logs, etc. in the anno file/adna2 to flag issues with dead pointers.
+
