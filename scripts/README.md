@@ -120,6 +120,17 @@ This program reorders .geno and .ind files (eigenstrat) to match a user-defined 
 
 The geno transpose and the ind vectors are then destructively reordered in place in `reorder_destructive` based on the order defined in the driver file. This saves a lot of overhead by mutating the vecotrs in place.
 
-The now-reordered geno vector is now writted back out to disk in its untransposed form, putting snps back on the rows and individuals on the columns, in `write_untransposed_geno` while `write_ind_file` handles writing the reordered ind file. The snp file is copied with no updates.
+The now reordered geno vector is now writted back out to disk in its untransposed form, putting snps back on the rows and individuals on the columns, in `write_untransposed_geno` while `write_ind_file` handles writing the reordered ind file. The snp file is copied with no updates.
 
 ## c_snp_reorder
+This program operates very similarly to c_eig_reorder but it handles reordering the snps in an eigenstrat geno file and its accompanying snp file.
+
+### Dependencies
+* C++17
+
+### Implementation
+`read_geno` handles reading the eigenstrat geno file into a vector while `read_snp_file` does this for the snp file. In this case, no transposing is needed.
+
+The geno transpose and the snp vectors are then destructively reordered in place in `reorder_destructive` based on the order defined in the driver file. This saves a lot of overhead by mutating the vecotrs in place.
+
+The now reordered geno and snp files are then written to disk with `write_geno` and `write_snp_file`, respectively, while the ind file is copied with out chnages.
