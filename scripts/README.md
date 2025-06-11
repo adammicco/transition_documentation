@@ -107,3 +107,19 @@ This is a basic script that handles creating a folder on /n/sratch3 to be used f
 
 This is not really relevant anymore given the sequencing platform and data delivery changes.
 
+## c_eig_reorder
+This is a program that I wrote out of desperation and I think it is thankfully not really needed anymore but I will document it here in case it does come in handy at some point.
+
+This program reorders .geno and .ind files (eigenstrat) to match a user-defined sample order specified in a "driver" file (a list of individual IDs). The output consists of reordered .geno and .ind files, along with a copy of the original .snp file. 
+
+### Dependencies
+* C++17
+
+### Implementation
+`read_geno_2_transpose` handles reading in the .geno file into its transpose, with individuals being on the rows and snps on the columns axis. `read_ind_file` then handles reading the .ind file.
+
+The geno transpose and the ind vectors are then destructively reordered in place in `reorder_destructive` based on the order defined in the driver file. This saves a lot of overhead by mutating the vecotrs in place.
+
+The now-reordered geno vector is now writted back out to disk in its untransposed form, putting snps back on the rows and individuals on the columns, in `write_untransposed_geno` while `write_ind_file` handles writing the reordered ind file. The snp file is copied with no updates.
+
+## c_snp_reorder
