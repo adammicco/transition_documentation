@@ -134,3 +134,11 @@ This program operates very similarly to c_eig_reorder but it handles reordering 
 The geno transpose and the snp vectors are then destructively reordered in place in `reorder_destructive` based on the order defined in the driver file. This saves a lot of overhead by mutating the vecotrs in place.
 
 The now reordered geno and snp files are then written to disk with `write_geno` and `write_snp_file`, respectively, while the ind file is copied with out chnages.
+
+## adaptive_pulldown_cov_parser.py
+This is a simple script that extracts the SNP counts and coverage depth from adaptive pulldown log files and prints them out into a tsv.
+
+### Implementation
+This is a fairly simple implementation that looks for the coverage table by searching for the string in `LEGACY_COVERAGE_LINE_KEY` (`"mean depth:"`) and pulling the "legacy" mean depth and coverage from this line. These are ostensibly the same metrics that are reported in the "legacy" pulldown report.
+
+It then looks for the full coverage report using the string in `COV_TABLE_LABEL` (`"coverage report (autosomes):"`) and un-pivots the SNPs, Hits, and Mean Depth for each panel into a single line to be reported in the tsv.
