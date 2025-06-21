@@ -142,3 +142,13 @@ This is a simple script that extracts the SNP counts and coverage depth from ada
 This is a fairly simple implementation that looks for the coverage table by searching for the string in `LEGACY_COVERAGE_LINE_KEY` (`"mean depth:"`) and pulling the "legacy" mean depth and coverage from this line. These are ostensibly the same metrics that are reported in the "legacy" pulldown report.
 
 It then looks for the full coverage report using the string in `COV_TABLE_LABEL` (`"coverage report (autosomes):"`) and un-pivots the SNPs, Hits, and Mean Depth for each panel into a single line to be reported in the tsv.
+
+## adaptive_pulldown_log_copy.py
+This is a simple script that handles moving/copying adaptive pulldown log files while maintaining referential integrity of the pointers in the files. It is also able to handle moving/copying the bams to the destination as well.
+
+### Implementation
+The logic here is pretty simple, it takes in the path to the adaptive pulldown directory as `in_path` and takes inventroy of all `*.log`, `*.hist`, and genotype files inside.
+
+From there, it checks that all pointers referenced in the files, as defined in `POINTERS_TO_CHECK`, exist and are live unless `--skip_validation` is set (not recommended).
+
+It then copies or moves (`-m`, `--move`) all `*.log`, `*.hist`, and genotype files to the destination `out_path` and updates the relevant pointers in the `*.log` and `*.hist` files to match the new directory location. If `--include_bam` is set, the bam and index file are also copied and pointers updated.
