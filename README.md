@@ -152,3 +152,18 @@ The logic here is pretty simple, it takes in the path to the adaptive pulldown d
 From there, it checks that all pointers referenced in the files, as defined in `POINTERS_TO_CHECK`, exist and are live unless `--skip_validation` is set (not recommended).
 
 It then copies or moves (`-m`, `--move`) all `*.log`, `*.hist`, and genotype files to the destination `out_path` and updates the relevant pointers in the `*.log` and `*.hist` files to match the new directory location. If `--include_bam` is set, the bam and index file are also copied and pointers updated.
+
+## Doppelgangers.py
+This is the script that I had been using to cue up doppenlanger merges but I think that it is very likely outdated now that adna2 is more mature. For completeness, I'm still including some implementation details here.
+
+### Implementation
+The script takes in an ESS file containing wetlab assessment calls and uses these calls to identify valid libraries above a certain assessment threshold (`-t`, `--threshold`), groups them by sample ID according to the specified maximum number of doppelgangers on a single plate (`-m`, `--max_doppelgangers`), and gnerates a list of singleton libraries for which only one valid library exists, a doppelganger file listing the samples with multiple valid libraries, and a BAM lookup file to locate the corresponding BAMs for each library.
+
+### Options
+
+| Option                      | Description                                                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `-o`, `--output_name`       | **(Required)** Base name for output files.                                                                                          |
+| `-t`, `--threshold`         | Assessment threshold to consider a library failed. One of: `questionable`, `questionable_critical`, `fail`, `dnu`. Default: `fail`. |
+| `--assessment_header_keys`  | List of keywords to detect the assessment column in the ESS. Default: `['call', 'assess']`.                                         |
+| `-m`, `--max_doppelgangers` | Maximum allowed number of libraries per sample ID. Default: `2`.                                                                    |
