@@ -172,5 +172,12 @@ The script takes in an ESS file containing wetlab assessment calls and uses thes
 This is a wrapper that handles parallelizing `mergemany` in order to more quickly merge a large number of indivisual genotype files.
 
 ### Implementation
-The script accepts a file with a list of input genotype stems, a path to the `mergemany` perl script (this determines the par file argumnets including output genotype file format). It then cues up pairwise merges according to `--max_processes` and handles recursivley merging along a binary tree until a single genotype file is created. md5 keys are generated for every genotype at each step to ensure that merge components are traceable through all merge steps.
+The script accepts a file with a list of input genotype stems, a path to the `mergemany` perl script (this determines the par file argumnets including output genotype file format). It then cues up pairwise merges according to `--max_processes` and handles recursivley merging along a binary tree until a single genotype file is created. The output files of each iteration are stored in `merge0`, `merge1`, etc directories and md5 keys are generated for every genotype at each step to ensure that merge components are traceable through all merge steps and are stored in the `*.md5_key` file in each directory.
 
+### Options
+
+| Option                  | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| `-e`, `--executable`    | Path to the merge executable (default: `/home/np29/o2bin/mergemany`) |
+| `-p`, `--max_processes` | Max number of parallel merge processes (default: `20`)               |
+| `-o`, `--overwrite`     | If set, overwrite existing `merge*/` directories                     |
