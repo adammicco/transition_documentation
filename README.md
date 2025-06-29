@@ -196,3 +196,111 @@ Based on this input, the script constructs a dictionary mapping the `pulldownID`
 | ---------------- | ---------------------------------------------------------------------------------------- |
 | `-d`, `--driver` | Path to the driver file (tab-delimited) with columns: `pulldownID geneticID sex groupID` |
 | `ind_files`      | One or more `.ind` files to update                                                       |
+
+## snp_split.py
+This is a script that I built when we switched from the old-style 1240K/HO release to pulling down on the 3.2M snpset and subsetting the master dataset (SNP union of 1240k basic + 1240k near target + Twist basic + Twist near target + Yfull + BigYoruba + BigYoruba near target) using anno file-driven rules and SNP definitions into a series of derivative datasets. It acts as a wrapper around `convertf` and handles job submission to SLURM.
+
+In typical use, this meant creating the following derivative datasets:
+
+* HO (~600K) snpset -- All samples
+* HO (~600K) snpset -- Only published samples
+* 1240K snpset -- All samples, excluding HO genotyping and BigYoruba data
+* 1240K snpset -- Only published samples, excluding HO genotyping and BigYoruba data
+* 2M snpset -- All samples, excluding HO genotyping data
+* 2M snpset -- Only published samples, excluding HO genotyping data
+* 3M snpset -- All samples, excluding HO genotyping data
+* 3M snpset -- Only published samples, excluding HO genotyping data
+* MASTER snpset -- All samples
+
+There is additionally a "best representative" function that was used for a few releases including and after v51. This attempted to define cannonical "best representative" versions of each Master ID within a derivative dataset by selecting the version with higest coverage, with a preference for 1240K.
+
+### Implementation
+
+The script is organized into a series of modular functions that handle reading anno file data, filtering logic, and generating par files for `convertf`/SLURM job submission.
+
+`read_anno_file()` reads the `*.anno` file as a tab-delimited table and loads it into a `dict[str, list[str]]` structure where each key is a column header. All downstream filters access sample metadata via this dictionary. These column names will likely need to be updated as the anno file has chnaged substatially since I wrote this c. 2021. This could also be abandoned and replaced with functionality to interface with adna2 now that the anno data is moving into that database.
+
+After loading in the `*.anno` file data, the scipt loads in the master `*.ind` file and ensures that the length matches the number of keys in the anno data dict.
+
+From here, the filetering logic is applied in the following order, using the below functions. The filters are additive and the union of all exclusion sets is used to drop the appropriate samples unless the option `--best_representative_mode_override` is specified.
+
+| Filter Type        | Function/Argument          | Description                                                                               |
+| ------------------ | -------------------------- | ----------------------------------------------------------------------------------------- |
+| Manual List        | `exclude_by_custom_list()` | Excludes samples explicitly listed in a text file.                                        |
+| Data Type          | `exclude_by_data_type()`   | Removes samples based on the content of `"Data types in bam"`.                            |
+| QC Assessment      | `exclude_by_assessment()`  | Removes samples marked as `"QUESTIONABLE"` or `"QUESTIONABLE_CRITICAL"`.                  |
+| UDG Treatment      | `exclude_by_udg()`         | Filters samples based on UDG damage treatment. Includes "mixed" logic for merged samples. |
+| Publication Status | `exclude_unpublished()`    | Removes samples with `"unpub"` or `"prepub"` in the publication column.                   |
+
+If the script was run with the `--best_representative` option, it then executes `get_best_representatives()` which groups all rows in the `*.anno` file by `Master ID` and evaluates SNP coverage and data source preference. The vesion of each Master ID with the higest coverage is selected unless `--preferred_data_source` is set, in which case coverage is considered secondary to the version from the specified data source, or if `--best_representative_mode` is `next_best` or `next_best_strict`, in which case pre-filtered samples are skipped.
+
+A `*.driver` file is then writen in `build_driver_file()` based on the `*.ind` file and the final exclusion set which will then be passed to `convertf` in a par file written by `build_par_file()` that will be run using the SLUM submission script generated using the `sbatch_template` by `build_sbatch_script()`. Unless the `--foreground` flag is set (rarely appropriate), the job is submitted to SLURM and the script exitis. If the `--foreground` flag is set, `convertf` is run directly using `subprocess.run()`.
+
+### Inputs/Options
+
+#### Required Arguments
+
+| Argument   | Description                                                                              |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `--master` | Path to the base genotype file stem (omit `.geno`, `.ind`, etc.) for the master dataset. |
+| `--label`  | A string label (e.g., `release_vXX`) to prepend to all output files across SNP sets.     |
+
+#### Input Files and Directories
+
+| Argument            | Description                                                                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--anno_file`       | Optional: specify path to a `.anno` file. If not provided, script will look for one named `[master].anno` alongside the master genotype files. Used for filtering decisions.            |
+| `--working_dir`     | Directory in which to execute and create outputs. Defaults to the current working directory.                                                                                            |
+| `--convertf_exe`    | Custom path to `convertf`. Defaults to internal hardcoded path in Nick's o2bin.                                                                                                         |
+| `--sbatch_template` | SLURM submission script template.                                                                                                                                                       |
+| `--foreground`      | If set, the script will run `convertf` directly in the foreground instead of submitting via SLURM. Only recommended for testing or very small runs.                                     |
+
+#### SNPset Selection
+
+| Argument        | Description                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--snp_sets`    | List of SNP set names to produce. Choose from: `HO`, `1240k_classic`, `2M`, `3M`, `Master`. Default: `['Master']` |
+| `--custom_list` | Paths to custom `.snp` files. Each will be treated as its own SNP set and output in a separate directory.         |
+
+#### Filtering Options
+
+| Argument                 | Description                                                                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--data_exclude`         | List of data types (from the "Data types in bam" column) to exclude.                                                                                                                                                              |
+| `--assessment_threshold` | Filters based on the QC column `"ASSESSMENT"` in the anno file. <br>Options: <br>• `questionable`: excludes only `QUESTIONABLE_CRITICAL` samples. <br>• `pass`: excludes both `QUESTIONABLE` and `QUESTIONABLE_CRITICAL` samples. |
+| `--UDG_exclude`          | Exclude samples with specific UDG treatments. Options: `minus`, `half`, `plus`, `mixed` (for merged UDG types).                                                                                                                   |
+| `--published_only`       | If set, will exclude samples whose `Publication abbreviation or plan` contains `unpub` or `prepub`.                                                                                                                               |
+
+#### Custom Inclusion/Exclusion Lists
+
+| Argument             | Description                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `--custom_exclusion` | File path to a list of Genetic IDs to exclude. Each ID should be on its own line.                               |
+| `--custom_inclusion` | File path to a list of Genetic IDs to **restore** into the output, even if otherwise excluded by other filters. |
+
+#### Best Representative Logic
+
+| Argument                     | Description                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--best_representative`      | Enables this logic. Script identifies all samples associated with a given Master ID and keeps only one.                                                                                                                                                                                                                                                                    |
+| `--preferred_data_source`    | Optional. If specified, this data source (e.g. `1240k`, `twist`) is preferred when choosing the best sample, even if its coverage is lower.                                                                                                                                                                                                                                |
+| `--best_representative_mode` | Controls how this logic interacts with other filters: <br>• `override`: ignore filters and choose the best sample (Default). <br>• `filter_union`: apply both best-rep logic and filters. <br>• `next_best`: find the best allowed sample that passes filters. <br>• `next_best_strict`: only keep preferred version if one exists; otherwise exclude the whole Master ID. |
+
+### Optput Structure
+
+```
+working_dir/
+│
+├── HO/
+│   ├── release_vXX_HO.geno
+│   ├── release_vXX_HO.ind
+│   ├── release_v5XX_HO.snp
+│   ├── release_v5XX_HO.driver
+│   ├── release_v5XX_HO_par
+│   └── release_v5XX_HO.sh   # SLURM script if not run in foreground
+│
+├── 1240k_classic/
+│   └── ...
+├── Master/
+│   └── ...
+```
