@@ -167,3 +167,10 @@ The script takes in an ESS file containing wetlab assessment calls and uses thes
 | `-t`, `--threshold`         | Assessment threshold to consider a library failed. One of: `questionable`, `questionable_critical`, `fail`, `dnu`. Default: `fail`. |
 | `--assessment_header_keys`  | List of keywords to detect the assessment column in the ESS. Default: `['call', 'assess']`.                                         |
 | `-m`, `--max_doppelgangers` | Maximum allowed number of libraries per sample ID. Default: `2`.                                                                    |
+
+## binary_mergemany.py
+This is a wrapper that handles parallelizing `mergemany` in order to more quickly merge a large number of indivisual genotype files.
+
+### Implementation
+The script accepts a file with a list of input genotype stems, a path to the `mergemany` perl script (this determines the par file argumnets including output genotype file format). It then cues up pairwise merges according to `--max_processes` and handles recursivley merging along a binary tree until a single genotype file is created. md5 keys are generated for every genotype at each step to ensure that merge components are traceable through all merge steps.
+
