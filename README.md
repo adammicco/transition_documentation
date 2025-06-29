@@ -181,3 +181,18 @@ The script accepts a file with a list of input genotype stems, a path to the `me
 | `-e`, `--executable`    | Path to the merge executable (default: `/home/np29/o2bin/mergemany`) |
 | `-p`, `--max_processes` | Max number of parallel merge processes (default: `20`)               |
 | `-o`, `--overwrite`     | If set, overwrite existing `merge*/` directories                     |
+
+## filter_merge.py
+This is a simple script I wrote to handle bulk renaming and filtering of samples across many `*.ind` files in a re-pulldown/re-processing scenario. Please note that it modifies `*.ind` files in place and saves off old versions of the modified ind files with the extension `.pdOrig`.
+
+### Implemetation
+This script accepts a `--driver` file and `ind_files` as arguments. The driver file should have four columns, `[pulldownID]\t[newGeneticID]\t[sex]\t[groupID]`, where `pulldownID` is the ID in any of the ind files for a particular sample and `newGeneticID`, `sex` and `groupID` are the name, sex, and group ID of the sample as they should appear in the eventual final merge of the `*.ind` files.
+
+Based on this input, the script constructs a dictionary mapping the `pulldownID`s to the desired `newGeneticID`, `sex` and `groupID` data and searches through all the given `*.ind` files and makes the necessary updates to these files in place and saves off old versions of the modified ind files with the extension `.pdOrig`. If IDs appear in the `*.ind` file that are not in the driver, they have their Group ID set to "Ignore" and will be deleted in the merge. Samples can also be explicitly marked for deletion by setting the `groupID` to "Ignore" in the driver file.
+
+### Arguments
+
+| Argument         | Description                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `-d`, `--driver` | Path to the driver file (tab-delimited) with columns: `pulldownID geneticID sex groupID` |
+| `ind_files`      | One or more `.ind` files to update                                                       |
